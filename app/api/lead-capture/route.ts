@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
-import { sendEmail } from "@/lib/email"
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,80 +32,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save lead to database" }, { status: 500 })
     }
 
-    // Send notification emails
-    try {
-      // Send welcome email to lead
-      await sendEmail({
-        to: email,
-        subject: "Welcome to LeaseSmallSpace - Your Expert Will Contact You Soon!",
-        template: "welcome-lead",
-        data: {
-          name,
-          phone,
-          unsubscribeUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/unsubscribe?email=${encodeURIComponent(email)}`,
-        },
-      })
+    console.log("Lead saved successfully:", data[0])
 
-      // Send notification to team
-      await sendEmail({
-        to: process.env.NOTIFICATION_EMAIL || "team@leasesmallspace.com",
-        subject: `🎯 New Lead: ${name} wants to speak to an expert`,
-        template: "new-lead-notification",
-        data: {
-          name,
-          email,
-          phone,
-          source,
-          page,
-          timestamp,
-          leadId: data[0]?.id,
-        },
-      })
-
-      // Send Slack notification if webhook is configured
-      if (process.env.SLACK_WEBHOOK_URL) {
-        await fetch(process.env.SLACK_WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: `🎯 New Lead Captured from LeaseSmallSpace!`,
-            blocks: [
-              {
-                type: "section",
-                text: {
-                  type: "mrkdwn",
-                  text: `*New Lead from ${source}*\n*Name:* ${name}\n*Email:* ${email}\n*Phone:* ${phone}\n*Page:* ${page}\n*Time:* ${new Date().toLocaleString()}`,
-                },
-              },
-              {
-                type: "actions",
-                elements: [
-                  {
-                    type: "button",
-                    text: {
-                      type: "plain_text",
-                      text: "Call Now",
-                    },
-                    url: `tel:${phone}`,
-                  },
-                  {
-                    type: "button",
-                    text: {
-                      type: "plain_text",
-                      text: "Send Email",
-                    },
-                    url: `mailto:${email}`,
-                  },
-                ],
-              },
-            ],
-          }),
-        })
-      }
-    } catch (emailError) {
-      console.error("Email/notification error:", emailError)
-      // Don't fail the request if email fails
-    }
+    // Email and notification services disabled for now
+    console.log("Email notifications disabled - would have sent welcome email to:", email)
+    console.log("Slack notifications disabled - would have notified team about:", name)
 
     return NextResponse.json({
       success: true,
