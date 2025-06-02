@@ -1,9 +1,84 @@
-import { supabase } from "./supabase"
+import { supabase, supabaseAdmin } from "./supabase"
 import type { Database } from "./supabase"
 
 type Property = Database["public"]["Tables"]["properties"]["Row"]
 type Inquiry = Database["public"]["Tables"]["inquiries"]["Insert"]
 type QuestionnaireResponse = Database["public"]["Tables"]["questionnaire_responses"]["Insert"]
+type Lead = Database["public"]["Tables"]["leads"]["Row"]
+
+// Lead functions
+export async function createLead(leadData: {
+  name: string
+  email: string
+  phone: string
+  source?: string
+  page_captured?: string
+}) {
+  const { data, error } = await supabase
+    .from("leads")
+    .insert([
+      {
+        ...leadData,
+        status: "new",
+      },
+    ])
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error creating lead:", error)
+    throw error
+  }
+
+  return data
+}
+
+export async function getLeads(filters?: {
+  status?: string
+  source?: string
+  limit?: number
+}) {
+  let query = supabaseAdmin.from("leads").select("*").order("created_at", { ascending: false })
+
+  if (filters?.status) {
+    query = query.eq("status", filters.status)
+  }
+  if (filters?.source) {
+    query = query.eq("source", filters.source)
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error("Error fetching leads:", error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function updateLeadStatus(leadId: string, status: string, notes?: string) {
+  const { data, error } = await supabaseAdmin
+    .from("leads")
+    .update({
+      status,
+      notes,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error updating lead:", error)
+    throw error
+  }
+
+  return data
+}
 
 // Property queries
 export async function getProperties(filters?: {

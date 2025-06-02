@@ -120,14 +120,14 @@ export default function QuestionnaireWizardWithDatabase() {
         sms_consent: data.smsConsent,
       })
 
-      // Create or update user
+      // Create or update user in database
       const user = await createOrUpdateUser({
         email: data.email,
         full_name: data.name,
         phone: data.phone,
       })
 
-      // Create inquiry
+      // Create inquiry record
       const inquiry = await createInquiry({
         user_id: user.id,
         full_name: data.name,
@@ -137,7 +137,7 @@ export default function QuestionnaireWizardWithDatabase() {
         status: "new",
       })
 
-      // Save questionnaire response
+      // Save detailed questionnaire response
       await saveQuestionnaireResponse({
         user_id: user.id,
         inquiry_id: inquiry.id,
@@ -148,6 +148,22 @@ export default function QuestionnaireWizardWithDatabase() {
         size_max: data.size + 1000,
         timeline: data.timeline,
         lease_or_buy: data.leaseOrBuy,
+        budget_min: null, // You can add budget steps later
+        budget_max: null,
+        features: [], // You can add features step later
+      })
+
+      // Send email notifications
+      await fetch("/api/questionnaire-submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userData: {
+            ...data,
+            userId: user.id,
+            inquiryId: inquiry.id,
+          },
+        }),
       })
 
       // Clear localStorage
@@ -158,10 +174,19 @@ export default function QuestionnaireWizardWithDatabase() {
         source: "questionnaire",
         user_id: user.id,
         inquiry_id: inquiry.id,
+        conversion_type: "questionnaire_completion",
       })
 
-      // Navigate to thank you page
-      router.push("/thank-you")
+      // Navigate to results page with user data
+      const searchParams = new URLSearchParams({
+        spaceType: data.spaceType,
+        size: data.size.toString(),
+        location: data.location,
+        timeline: data.timeline,
+        userId: user.id,
+      })
+
+      router.push(`/results?${searchParams.toString()}`)
     } catch (error) {
       console.error("Error submitting questionnaire:", error)
 
@@ -170,8 +195,8 @@ export default function QuestionnaireWizardWithDatabase() {
         error: error instanceof Error ? error.message : "Unknown error",
       })
 
-      // Still navigate to thank you page for better UX
-      router.push("/thank-you")
+      // Still navigate to results page for better UX
+      router.push("/results")
     } finally {
       setIsSubmitting(false)
     }
@@ -198,7 +223,7 @@ export default function QuestionnaireWizardWithDatabase() {
       case 5: // Timeline
         return !!data.timeline
       case 6: // Contact
-        return !!data.email && !!data.phone
+        return !!data.email && !!data.phone && !!data.name
       default:
         return false
     }
@@ -268,7 +293,7 @@ export default function QuestionnaireWizardWithDatabase() {
           className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 flex items-center"
           disabled={!canProceed() || isSubmitting}
         >
-          {isSubmitting ? "Submitting..." : step === totalSteps ? "Get My Matches" : "Continue"}
+          {isSubmitting ? "Finding Your Matches..." : step === totalSteps ? "Get My Matches" : "Continue"}
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>

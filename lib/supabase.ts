@@ -5,10 +5,50 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Database types based on our schema
+// Server-side client with service role key
+export const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+// Database types based on your schema
 export type Database = {
   public: {
     Tables: {
+      leads: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          phone: string
+          source: string | null
+          page_captured: string | null
+          status: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email: string
+          phone: string
+          source?: string | null
+          page_captured?: string | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          phone?: string
+          source?: string | null
+          page_captured?: string | null
+          status?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+      }
       users: {
         Row: {
           id: string
