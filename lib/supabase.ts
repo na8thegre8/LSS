@@ -18,10 +18,16 @@ if (!supabaseAnonKey) {
   throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable")
 }
 
+// Client-side Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Admin client for server-side operations (if service key is available)
 export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : supabase
+
+// Helper function to create client-side Supabase client
+export const createClientComponentClient = () => {
+  return createClient(supabaseUrl!, supabaseAnonKey!)
+}
 
 export type Database = {
   public: {
@@ -282,6 +288,28 @@ export type Database = {
           page_url?: string | null
           user_agent?: string | null
           ip_address?: string | null
+        }
+      }
+      admin_users: {
+        Row: {
+          id: string
+          user_id: string | null
+          email: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          email: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          email?: string
+          updated_at?: string
         }
       }
     }

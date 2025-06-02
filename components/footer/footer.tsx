@@ -11,12 +11,12 @@ export function Footer() {
             <div className="flex items-center space-x-3 mb-4">
               <Image
                 src="/images/logo-green-pin-warehouse.png"
-                alt="RentSmallSpace Logo"
+                alt="LeaseSmallSpace Logo"
                 width={40}
                 height={40}
                 className="w-10 h-10"
               />
-              <span className="text-xl font-bold text-blue-600">RentSmallSpace</span>
+              <span className="text-xl font-bold text-blue-600">LeaseSmallSpace</span>
             </div>
             <p className="text-gray-600 max-w-md leading-relaxed">
               Simplifying the search for small warehouse and industrial space in Colorado. Find your perfect space with
@@ -38,6 +38,11 @@ export function Footer() {
                   Privacy
                 </Link>
               </li>
+              <li>
+                <Link href="/admin/login" className="text-gray-600 hover:text-blue-600 transition-colors duration-200">
+                  Admin
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -45,7 +50,7 @@ export function Footer() {
         {/* Bottom Border */}
         <div className="mt-8 pt-8 border-t border-gray-200">
           <p className="text-center text-gray-500 text-sm">
-            © {new Date().getFullYear()} RentSmallSpace.com. All rights reserved.
+            © {new Date().getFullYear()} LeaseSmallSpace.com. All rights reserved.
           </p>
         </div>
       </div>
