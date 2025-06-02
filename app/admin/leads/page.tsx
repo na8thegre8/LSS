@@ -39,8 +39,9 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Questionnaire Responses ({data.length})</h2>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold mb-4">Admin Leads</h1>
+      <p>Leads management coming soon...</p>
 
       <Card>
         <CardContent className="pt-6">

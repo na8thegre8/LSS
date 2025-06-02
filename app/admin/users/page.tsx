@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, UserPlus } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 interface AdminUser {
   id: string
@@ -46,17 +46,9 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Admin Users</h2>
-          <p className="mt-1 text-sm text-gray-600">Manage administrator accounts for LeaseSmallSpace.com</p>
-        </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
-      </div>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold mb-4">Admin Users</h1>
+      <p>User management coming soon...</p>
 
       <Card>
         <CardHeader>
