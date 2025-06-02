@@ -8,10 +8,10 @@ import LeaseOrBuyStep from "./step-lease-or-buy"
 import SpaceTypeStep from "./step-space-type"
 import SizeStep from "./step-size"
 import LocationStep from "./step-location"
+import BudgetStep from "./step-budget"
 import TimelineStep from "./step-timeline"
 import ContactStep from "./step-contact"
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react"
-import { createOrUpdateUser, createInquiry, saveQuestionnaireResponse } from "@/lib/database"
 import { useAnalytics } from "@/hooks/use-analytics"
 import { InactivityPopup } from "@/components/lead-capture/inactivity-popup"
 
@@ -20,6 +20,7 @@ export type QuestionnaireData = {
   spaceType: string
   size: number
   location: string
+  budget: string
   timeline: string
   name: string
   email: string
@@ -36,6 +37,7 @@ export default function QuestionnaireWizardWithDatabase() {
     spaceType: "",
     size: 2000,
     location: "",
+    budget: "",
     timeline: "",
     name: "",
     email: "",
@@ -71,11 +73,11 @@ export default function QuestionnaireWizardWithDatabase() {
     })
   }, [step, track])
 
-  const totalSteps = 6
+  const totalSteps = 7 // Updated to include budget step
   const progress = Math.round((step / totalSteps) * 100)
 
   const getStepName = (stepNumber: number) => {
-    const stepNames = ["lease_or_buy", "space_type", "size", "location", "timeline", "contact"]
+    const stepNames = ["lease_or_buy", "space_type", "size", "location", "budget", "timeline", "contact"]
     return stepNames[stepNumber - 1] || "unknown"
   }
 
@@ -113,76 +115,53 @@ export default function QuestionnaireWizardWithDatabase() {
     try {
       console.log("Starting questionnaire submission with data:", data)
 
-      // Track questionnaire completion
-      track("questionnaire_completed", {
-        lease_or_buy: data.leaseOrBuy,
-        space_type: data.spaceType,
-        size: data.size,
-        location: data.location,
-        timeline: data.timeline,
-        sms_consent: data.smsConsent,
+      // Submit to our API endpoint
+      const response = await fetch("/api/questionnaire-submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          responses: {
+            leaseOrBuy: data.leaseOrBuy,
+            spaceType: data.spaceType,
+            size: data.size,
+            location: data.location,
+            budget: data.budget,
+            timeline: data.timeline,
+          },
+          userInfo: {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            smsConsent: data.smsConsent,
+          },
+        }),
       })
 
-      // Create or update user in database
-      console.log("Creating/updating user...")
-      const user = await createOrUpdateUser({
-        email: data.email,
-        full_name: data.name,
-        phone: data.phone,
-      })
-      console.log("User created/updated:", user)
+      const result = await response.json()
 
-      // Create inquiry record
-      console.log("Creating inquiry...")
-      const inquiry = await createInquiry({
-        user_id: user.id,
-        full_name: data.name,
-        email: data.email,
-        phone: data.phone,
-        inquiry_type: "questionnaire",
-        status: "new",
-        message: `Questionnaire: ${data.spaceType} space, ${data.size} sq ft in ${data.location}`,
-      })
-      console.log("Inquiry created:", inquiry)
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to submit questionnaire")
+      }
 
-      // Save detailed questionnaire response
-      console.log("Saving questionnaire response...")
-      const questionnaireResponse = await saveQuestionnaireResponse({
-        user_id: user.id,
-        inquiry_id: inquiry.id,
-        responses: data,
-        space_type: data.spaceType,
-        location_preference: data.location,
-        size_min: Math.max(500, data.size - 500),
-        size_max: data.size + 1000,
-        timeline: data.timeline,
-        lease_or_buy: data.leaseOrBuy,
-      })
-      console.log("Questionnaire response saved:", questionnaireResponse)
-
-      // Clear localStorage
-      localStorage.removeItem("leaseSmallSpace_questionnaire")
+      console.log("Questionnaire submission successful:", result)
 
       // Track successful submission
       track("lead_generated", {
         source: "questionnaire",
-        user_id: user.id,
-        inquiry_id: inquiry.id,
+        user_id: result.userId,
+        inquiry_id: result.inquiryId,
         conversion_type: "questionnaire_completion",
       })
 
+      // Clear localStorage
+      localStorage.removeItem("leaseSmallSpace_questionnaire")
+
       console.log("Questionnaire submission completed successfully!")
 
-      // Navigate to results page with user data
-      const searchParams = new URLSearchParams({
-        spaceType: data.spaceType,
-        size: data.size.toString(),
-        location: data.location,
-        timeline: data.timeline,
-        userId: user.id,
-      })
-
-      router.push(`/results?${searchParams.toString()}`)
+      // Navigate to thank you page
+      router.push("/thank-you")
     } catch (error) {
       console.error("Error submitting questionnaire:", error)
 
@@ -216,9 +195,11 @@ export default function QuestionnaireWizardWithDatabase() {
         return data.size >= 500
       case 4: // Location
         return !!data.location
-      case 5: // Timeline
+      case 5: // Budget
+        return !!data.budget
+      case 6: // Timeline
         return !!data.timeline
-      case 6: // Contact
+      case 7: // Contact
         return !!data.email && !!data.phone && !!data.name
       default:
         return false
@@ -265,9 +246,17 @@ export default function QuestionnaireWizardWithDatabase() {
 
           {step === 4 && <LocationStep value={data.location} onChange={(value) => updateData("location", value)} />}
 
-          {step === 5 && <TimelineStep value={data.timeline} onChange={(value) => updateData("timeline", value)} />}
+          {step === 5 && (
+            <BudgetStep
+              value={data.budget}
+              onChange={(value) => updateData("budget", value)}
+              selectedSize={data.size}
+            />
+          )}
 
-          {step === 6 && (
+          {step === 6 && <TimelineStep value={data.timeline} onChange={(value) => updateData("timeline", value)} />}
+
+          {step === 7 && (
             <ContactStep
               name={data.name}
               email={data.email}
@@ -292,7 +281,7 @@ export default function QuestionnaireWizardWithDatabase() {
             className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 flex items-center"
             disabled={!canProceed() || isSubmitting}
           >
-            {isSubmitting ? "Finding Your Matches..." : step === totalSteps ? "Get My Matches" : "Continue"}
+            {isSubmitting ? "Submitting..." : step === totalSteps ? "Submit" : "Continue"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>

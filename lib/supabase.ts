@@ -1,14 +1,28 @@
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+console.log("Supabase URL:", supabaseUrl)
+console.log("Supabase Anon Key exists:", !!supabaseAnonKey)
+console.log("Supabase Service Key exists:", !!supabaseServiceKey)
+
+if (!supabaseUrl) {
+  console.error("NEXT_PUBLIC_SUPABASE_URL is not set")
+  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL environment variable")
+}
+
+if (!supabaseAnonKey) {
+  console.error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not set")
+  throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable")
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Server-side client with service role key
-export const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+// Admin client for server-side operations (if service key is available)
+export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : supabase
 
-// Database types based on your schema
 export type Database = {
   public: {
     Tables: {

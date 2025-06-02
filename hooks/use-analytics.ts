@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { trackEvent } from "@/lib/database"
 
 export function useAnalytics() {
   const [sessionId] = useState(() => {
@@ -13,9 +12,31 @@ export function useAnalytics() {
 
   const track = async (eventName: string, properties?: any, userId?: string) => {
     try {
-      await trackEvent(eventName, properties, userId, sessionId)
+      if (typeof window === "undefined") return // Don't run on server
+
+      // Use the server-side API endpoint instead of direct Supabase call
+      const response = await fetch("/api/track-event", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventName,
+          properties,
+          userId,
+          sessionId,
+          pageUrl: window.location.href,
+          userAgent: navigator.userAgent,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.warn("Analytics tracking failed:", errorData.error)
+      }
     } catch (error) {
-      console.error("Analytics tracking failed:", error)
+      // Gracefully handle errors without breaking the app
+      console.warn("Analytics tracking failed:", error)
     }
   }
 
