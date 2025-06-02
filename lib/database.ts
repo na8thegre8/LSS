@@ -14,6 +14,8 @@ export async function createLead(leadData: {
   source?: string
   page_captured?: string
 }) {
+  console.log("Creating lead with data:", leadData)
+
   const { data, error } = await supabase
     .from("leads")
     .insert([
@@ -30,6 +32,7 @@ export async function createLead(leadData: {
     throw error
   }
 
+  console.log("Lead created successfully:", data)
   return data
 }
 
@@ -133,6 +136,8 @@ export async function getPropertyById(id: string) {
 
 // Inquiry functions
 export async function createInquiry(inquiry: Inquiry) {
+  console.log("Creating inquiry with data:", inquiry)
+
   const { data, error } = await supabase.from("inquiries").insert(inquiry).select().single()
 
   if (error) {
@@ -140,11 +145,14 @@ export async function createInquiry(inquiry: Inquiry) {
     throw error
   }
 
+  console.log("Inquiry created successfully:", data)
   return data
 }
 
 // Questionnaire functions
 export async function saveQuestionnaireResponse(response: QuestionnaireResponse) {
+  console.log("Saving questionnaire response with data:", response)
+
   const { data, error } = await supabase.from("questionnaire_responses").insert(response).select().single()
 
   if (error) {
@@ -152,6 +160,7 @@ export async function saveQuestionnaireResponse(response: QuestionnaireResponse)
     throw error
   }
 
+  console.log("Questionnaire response saved successfully:", data)
   return data
 }
 
@@ -180,6 +189,8 @@ export async function createOrUpdateUser(userData: {
   phone?: string
   company_name?: string
 }) {
+  console.log("Creating/updating user with data:", userData)
+
   const { data, error } = await supabase.from("users").upsert(userData, { onConflict: "email" }).select().single()
 
   if (error) {
@@ -187,5 +198,6 @@ export async function createOrUpdateUser(userData: {
     throw error
   }
 
+  console.log("User created/updated successfully:", data)
   return data
 }

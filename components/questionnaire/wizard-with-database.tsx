@@ -13,6 +13,7 @@ import ContactStep from "./step-contact"
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react"
 import { createOrUpdateUser, createInquiry, saveQuestionnaireResponse } from "@/lib/database"
 import { useAnalytics } from "@/hooks/use-analytics"
+import { InactivityPopup } from "@/components/lead-capture/inactivity-popup"
 
 export type QuestionnaireData = {
   leaseOrBuy: string
@@ -110,6 +111,8 @@ export default function QuestionnaireWizardWithDatabase() {
     setIsSubmitting(true)
 
     try {
+      console.log("Starting questionnaire submission with data:", data)
+
       // Track questionnaire completion
       track("questionnaire_completed", {
         lease_or_buy: data.leaseOrBuy,
@@ -121,13 +124,16 @@ export default function QuestionnaireWizardWithDatabase() {
       })
 
       // Create or update user in database
+      console.log("Creating/updating user...")
       const user = await createOrUpdateUser({
         email: data.email,
         full_name: data.name,
         phone: data.phone,
       })
+      console.log("User created/updated:", user)
 
       // Create inquiry record
+      console.log("Creating inquiry...")
       const inquiry = await createInquiry({
         user_id: user.id,
         full_name: data.name,
@@ -135,10 +141,13 @@ export default function QuestionnaireWizardWithDatabase() {
         phone: data.phone,
         inquiry_type: "questionnaire",
         status: "new",
+        message: `Questionnaire: ${data.spaceType} space, ${data.size} sq ft in ${data.location}`,
       })
+      console.log("Inquiry created:", inquiry)
 
       // Save detailed questionnaire response
-      await saveQuestionnaireResponse({
+      console.log("Saving questionnaire response...")
+      const questionnaireResponse = await saveQuestionnaireResponse({
         user_id: user.id,
         inquiry_id: inquiry.id,
         responses: data,
@@ -148,23 +157,8 @@ export default function QuestionnaireWizardWithDatabase() {
         size_max: data.size + 1000,
         timeline: data.timeline,
         lease_or_buy: data.leaseOrBuy,
-        budget_min: null, // You can add budget steps later
-        budget_max: null,
-        features: [], // You can add features step later
       })
-
-      // Send email notifications
-      await fetch("/api/questionnaire-submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userData: {
-            ...data,
-            userId: user.id,
-            inquiryId: inquiry.id,
-          },
-        }),
-      })
+      console.log("Questionnaire response saved:", questionnaireResponse)
 
       // Clear localStorage
       localStorage.removeItem("leaseSmallSpace_questionnaire")
@@ -176,6 +170,8 @@ export default function QuestionnaireWizardWithDatabase() {
         inquiry_id: inquiry.id,
         conversion_type: "questionnaire_completion",
       })
+
+      console.log("Questionnaire submission completed successfully!")
 
       // Navigate to results page with user data
       const searchParams = new URLSearchParams({
@@ -195,8 +191,8 @@ export default function QuestionnaireWizardWithDatabase() {
         error: error instanceof Error ? error.message : "Unknown error",
       })
 
-      // Still navigate to results page for better UX
-      router.push("/results")
+      // Show error to user
+      alert("There was an error submitting your questionnaire. Please try again or contact support.")
     } finally {
       setIsSubmitting(false)
     }
@@ -230,73 +226,83 @@ export default function QuestionnaireWizardWithDatabase() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden relative">
-      {/* Header with logo and progress */}
-      <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-white">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-bold text-blue-600">LeaseSmallSpace.com</h1>
-          <span className="text-sm text-gray-500">
-            Step {step} of {totalSteps}
-          </span>
-        </div>
-        <Progress value={progress} className="h-3" />
-        <div className="flex justify-between text-xs text-gray-500 mt-2">
-          <span>Getting Started</span>
-          <span>{progress}% Complete</span>
-          <span>Almost Done!</span>
-        </div>
-      </div>
-
-      {/* Checkmark animation overlay */}
-      {showCheckmark && (
-        <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-10">
-          <div className="bg-green-100 rounded-full p-4">
-            <CheckCircle className="h-12 w-12 text-green-600" />
+    <>
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden relative">
+        {/* Header with logo and progress */}
+        <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-xl font-bold text-blue-600">LeaseSmallSpace.com</h1>
+            <span className="text-sm text-gray-500">
+              Step {step} of {totalSteps}
+            </span>
+          </div>
+          <Progress value={progress} className="h-3" />
+          <div className="flex justify-between text-xs text-gray-500 mt-2">
+            <span>Getting Started</span>
+            <span>{progress}% Complete</span>
+            <span>Almost Done!</span>
           </div>
         </div>
-      )}
 
-      {/* Step content */}
-      <div className="p-8">
-        {step === 1 && <LeaseOrBuyStep value={data.leaseOrBuy} onChange={(value) => updateData("leaseOrBuy", value)} />}
-
-        {step === 2 && <SpaceTypeStep value={data.spaceType} onChange={(value) => updateData("spaceType", value)} />}
-
-        {step === 3 && <SizeStep value={data.size} onChange={(value) => updateData("size", value)} />}
-
-        {step === 4 && <LocationStep value={data.location} onChange={(value) => updateData("location", value)} />}
-
-        {step === 5 && <TimelineStep value={data.timeline} onChange={(value) => updateData("timeline", value)} />}
-
-        {step === 6 && (
-          <ContactStep
-            name={data.name}
-            email={data.email}
-            phone={data.phone}
-            smsConsent={data.smsConsent}
-            onNameChange={(value) => updateData("name", value)}
-            onEmailChange={(value) => updateData("email", value)}
-            onPhoneChange={(value) => updateData("phone", value)}
-            onSmsConsentChange={(value) => updateData("smsConsent", value)}
-          />
+        {/* Checkmark animation overlay */}
+        {showCheckmark && (
+          <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-10">
+            <div className="bg-green-100 rounded-full p-4">
+              <CheckCircle className="h-12 w-12 text-green-600" />
+            </div>
+          </div>
         )}
+
+        {/* Step content */}
+        <div className="p-8">
+          {step === 1 && (
+            <LeaseOrBuyStep value={data.leaseOrBuy} onChange={(value) => updateData("leaseOrBuy", value)} />
+          )}
+
+          {step === 2 && <SpaceTypeStep value={data.spaceType} onChange={(value) => updateData("spaceType", value)} />}
+
+          {step === 3 && <SizeStep value={data.size} onChange={(value) => updateData("size", value)} />}
+
+          {step === 4 && <LocationStep value={data.location} onChange={(value) => updateData("location", value)} />}
+
+          {step === 5 && <TimelineStep value={data.timeline} onChange={(value) => updateData("timeline", value)} />}
+
+          {step === 6 && (
+            <ContactStep
+              name={data.name}
+              email={data.email}
+              phone={data.phone}
+              smsConsent={data.smsConsent}
+              onNameChange={(value) => updateData("name", value)}
+              onEmailChange={(value) => updateData("email", value)}
+              onPhoneChange={(value) => updateData("phone", value)}
+              onSmsConsentChange={(value) => updateData("smsConsent", value)}
+            />
+          )}
+        </div>
+
+        {/* Bottom buttons */}
+        <div className="p-6 border-t bg-gray-50 flex justify-between">
+          <Button variant="outline" onClick={handleBack} disabled={step === 1} className="flex items-center">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+
+          <Button
+            onClick={handleNext}
+            className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 flex items-center"
+            disabled={!canProceed() || isSubmitting}
+          >
+            {isSubmitting ? "Finding Your Matches..." : step === totalSteps ? "Get My Matches" : "Continue"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Bottom buttons */}
-      <div className="p-6 border-t bg-gray-50 flex justify-between">
-        <Button variant="outline" onClick={handleBack} disabled={step === 1} className="flex items-center">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
-
-        <Button
-          onClick={handleNext}
-          className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 flex items-center"
-          disabled={!canProceed() || isSubmitting}
-        >
-          {isSubmitting ? "Finding Your Matches..." : step === totalSteps ? "Get My Matches" : "Continue"}
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+      {/* Inactivity popup - only shows in questionnaire when stuck on a question */}
+      <InactivityPopup
+        inactivityDelay={30000} // 30 seconds
+        exitIntentEnabled={true}
+      />
+    </>
   )
 }
