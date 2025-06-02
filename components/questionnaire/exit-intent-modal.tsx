@@ -65,21 +65,54 @@ export function ExitIntentModal() {
     }
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Save email to localStorage
+
+    let name = ""
+
+    // Save contact info to localStorage and get name if available
     const savedData = localStorage.getItem("rentSmallSpace_questionnaire")
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData)
+        name = parsedData.name || ""
         parsedData.email = email
         parsedData.phone = phone
-        localStorage.setItem("rentSmallSpace_questionnaire", JSON.stringify(parsedData))
-      } catch (e) {
-        console.error("Error updating saved data", e)
+        localStorage.setItem(
+          "rentSmallSpace_questionnaire",
+          JSON.stringify(parsedData),
+        )
+      } catch (err) {
+        console.error("Error updating saved data", err)
       }
     }
-    setOpen(false)
+
+    try {
+      const response = await fetch("/api/lead-capture", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, phone, source: "exit_intent" }),
+      })
+
+      if (response.ok) {
+        setOpen(false)
+
+        // Optional conversion tracking
+        if (typeof window !== "undefined" && window.gtag) {
+          window.gtag("event", "lead_capture", {
+            event_category: "engagement",
+            event_label: "exit_intent",
+            value: 1,
+          })
+        }
+      } else {
+        console.error("Failed to capture lead")
+      }
+    } catch (error) {
+      console.error("Lead capture request failed", error)
+    }
   }
 
   return (
