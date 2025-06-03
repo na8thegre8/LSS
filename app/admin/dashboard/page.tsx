@@ -137,11 +137,9 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-green-600 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Loading Dashboard...</p>
-        </div>
+      <div className="flex items-center justify-center h-screen p-6">
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <p className="ml-2">Loading Dashboard Data...</p>
       </div>
     )
   }
@@ -350,6 +348,11 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      <p className="text-sm text-gray-500 mt-4">
+        Advanced statistics, recent activity, and quick actions are temporarily disabled. These will be re-implemented
+        in a new chat session.
+      </p>
     </div>
   )
 }

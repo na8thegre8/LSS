@@ -1,7 +1,6 @@
 "use client"
-
 import type React from "react"
-
+import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
@@ -53,8 +52,15 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Admin Settings</h1>
-      <p>Settings coming soon...</p>
+      <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+      <p className="text-gray-600 mt-2">
+        Account settings and preferences are temporarily disabled for deployment stability. This page will be fully
+        implemented in a new chat session.
+      </p>
+      <div className="mt-8 flex items-center justify-center text-gray-500">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+        <span>Content placeholder...</span>
+      </div>
     </div>
   )
 }
