@@ -290,28 +290,6 @@ export type Database = {
           ip_address?: string | null
         }
       }
-      admin_users: {
-        Row: {
-          id: string
-          user_id: string | null
-          email: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          email: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          email?: string
-          updated_at?: string
-        }
-      }
     }
   }
 }

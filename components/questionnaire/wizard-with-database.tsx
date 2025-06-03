@@ -237,26 +237,51 @@ export default function QuestionnaireWizardWithDatabase() {
         {/* Step content */}
         <div className="p-8">
           {step === 1 && (
-            <LeaseOrBuyStep value={data.leaseOrBuy} onChange={(value) => updateData("leaseOrBuy", value)} />
+            <LeaseOrBuyStep
+              value={data.leaseOrBuy}
+              onChange={(value) => updateData("leaseOrBuy", value)}
+              onSelectionMade={handleNext}
+            />
           )}
 
-          {step === 2 && <SpaceTypeStep value={data.spaceType} onChange={(value) => updateData("spaceType", value)} />}
+          {step === 2 && (
+            <SpaceTypeStep
+              value={data.spaceType}
+              onChange={(value) => updateData("spaceType", value)}
+              onSelectionMade={handleNext}
+            />
+          )}
 
-          {step === 3 && <SizeStep value={data.size} onChange={(value) => updateData("size", value)} />}
+          {step === 3 && (
+            <SizeStep value={data.size} onChange={(value) => updateData("size", value)} onSelectionMade={handleNext} />
+          )}
 
-          {step === 4 && <LocationStep value={data.location} onChange={(value) => updateData("location", value)} />}
+          {step === 4 && (
+            <LocationStep
+              value={data.location}
+              onChange={(value) => updateData("location", value)}
+              onSelectionMade={handleNext}
+            />
+          )}
 
           {step === 5 && (
             <BudgetStep
               value={data.budget}
               onChange={(value) => updateData("budget", value)}
               selectedSize={data.size}
+              onSelectionMade={handleNext}
             />
           )}
 
-          {step === 6 && <TimelineStep value={data.timeline} onChange={(value) => updateData("timeline", value)} />}
+          {step === 6 && (
+            <TimelineStep
+              value={data.timeline}
+              onChange={(value) => updateData("timeline", value)}
+              onSelectionMade={handleNext}
+            />
+          )}
 
-          {step === 7 && (
+          {step === 7 && ( // ContactStep - no onSelectionMade for auto-advance
             <ContactStep
               name={data.name}
               email={data.email}
